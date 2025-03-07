@@ -3,15 +3,19 @@ using SongSeeker.Interfaces;
 
 namespace SongSeeker;
 
-public class AudioProcessor : IAudioProcessor
+public class Mp3AudioProcessor : IAudioProcessor
 {
     public float[] ReadAudioSamples(string filepath)
     {
-        using (var audiofile = new AudioFileReader(filepath))
+        using (var reader = new Mp3FileReader(filepath))
         {
-            var samples = new float[audiofile.Length];
-            audiofile.Read(samples, 0, samples.Length);
-            return samples;
+            var waveStream = WaveFormatConversionStream.CreatePcmStream(reader);
+            var sampleProvider = waveStream.ToSampleProvider();
+            var buffer = new float[waveStream.Length / 4];
+            var sampleRead = sampleProvider.Read(buffer, 0, buffer.Length);
+
+            if (sampleRead < buffer.Length) Array.Resize(ref buffer, sampleRead);
+            return buffer;
         }
     }
 }
